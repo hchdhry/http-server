@@ -24,26 +24,22 @@ public class Server {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             System.out.println("connected");
+
+            String[] requestLine = in.readLine().split(" ",3);
+            method = requestLine[0];
+            path = requestLine[1];
+            version = requestLine[2];
+            System.out.println("yee: "+ method+path+version);
+
             String line;
             System.out.println("---- RAW REQUEST START ----");
             while ((line = in.readLine()) != null && !line.isEmpty()) {
-                if (line.startsWith("GET") || line.startsWith("POST") ||line.startsWith("PUT") || line.startsWith("DELETE")){
-//                    for (int i = 0;i<= line.length();i++){
-//                        if(line[i]==" "){}
-//
-//                    }
-                    String[] temp = line.split(" ",3);
-                    method = temp[0];
-                    path = temp[1];
-                    version = temp[2];
-                    System.out.println("yee: "+ method+path+version);
-                }
                 System.out.println(line);
             }
             out.println(message);
             out.println("HTTP/1.1 200 OK");
             out.println("Content-Type: text/plain");
-            out.println("Content-Length: " + message.length());
+            out.println("Content-Length:" + message.length());
             out.println();
             clientSocket.close();
         }
