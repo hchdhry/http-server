@@ -1,15 +1,17 @@
+import Constants.HttpResponses;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class Server {
     private ServerSocket serverSocket;
-    private Socket clientSocket;
-    private PrintWriter out;
     private String method;
     private String path;
     private String version;
@@ -26,28 +28,42 @@ public class Server {
     }
 
     private void handleClient(final Socket socket) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(socket.getOutputStream(), true);
-        System.out.println("connected");
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
-        String[] requestLine = in.readLine().split(" ", 3);
-        method = requestLine[0];
-        path = requestLine[1];
-        version = requestLine[2];
-        System.out.println("yee: " + method + path + version);
+        ) {
+            System.out.println("connected");
+            Map<String, String> headers = new HashMap<>();
+            HttpResponses response = HttpResponses.OK;
+            String[] requestLine = in.readLine().split(" ", 3);
+            method = requestLine[0];
+            path = requestLine[1];
+            version = requestLine[2];
+            System.out.println("yee: " + "method: " + method + "path: " + path + "version: " + version);
 
-        String line;
-        System.out.println("---- RAW REQUEST START ----");
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
-            System.out.println(line);
+            String line;
+            System.out.println("---- RAW REQUEST START ----");
+            while ((line = in.readLine()) != null && !line.isEmpty()) {
+                String[] headerParts = line.split(":", 2);
+                headers.put(headerParts[0], headerParts[1]);
+                System.out.println(line);
+            }
+            if (path.equals("/")) {
+                message = "Home";
+            } else if (path.equals("/yee")) {
+                message = "YEE";
+            } else {
+                response = HttpResponses.NOT_FOUND;
+                message = "NOT FOUND";
+            }
+
+            out.println("HTTP/1.1" + response.getCode() + response.getDescription());
+            out.println("Content-Type: text/plain");
+            out.println("Content-Length: " + message.length());
+            out.println();
+            out.println(message);
+            socket.close();
+
         }
-
-        out.println("HTTP/1.1 200 OK");
-        out.println("Content-Type: text/plain");
-        out.println("Content-Length: " + message.length());
-        out.println();
-        out.println(message);
-        socket.close();
-
     }
 }
