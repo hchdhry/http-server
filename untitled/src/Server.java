@@ -57,13 +57,16 @@ public class Server {
                 message = "NOT FOUND";
             }
 
-            out.println("HTTP/1.1" + response.getCode() + response.getDescription());
-            out.println("Content-Type: text/plain");
-            out.println("Content-Length: " + message.length());
-            out.println();
-            out.println(message);
+         sendResponse(out,response,message);
             socket.close();
 
         }
+    }
+    private void sendResponse(PrintWriter out,HttpResponses response, String message){
+        out.println("HTTP/1.1" + response.getCode() + response.getDescription());
+        out.println("Content-Type: text/plain");
+        out.println("Content-Length: " + message.length());
+        out.println();
+        out.println(message);
     }
 }
