@@ -12,17 +12,23 @@ import java.util.Map;
 
 public class Server {
     private ServerSocket serverSocket;
-    private String method;
-    private String path;
-    private String version;
-    private String message;
+    //private String method;
+   // private String path;
+    //private String version;
+//    private String message;
 
     public void start(int port) throws IOException {
 
         serverSocket = new ServerSocket(port);
-        message = "Hello world";
         while (true) {
-            handleClient(serverSocket.accept());
+            Socket socket = serverSocket.accept();
+            new Thread(() -> {
+                try {
+                    handleClient(socket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
         }
 
     }
@@ -36,9 +42,10 @@ public class Server {
             Map<String, String> headers = new HashMap<>();
             HttpResponses response = HttpResponses.OK;
             String[] requestLine = in.readLine().split(" ", 3);
-            method = requestLine[0];
-            path = requestLine[1];
-            version = requestLine[2];
+           String method = requestLine[0];
+            String message = "";
+            String path = requestLine[1];
+            String version = requestLine[2];
             System.out.println("yee: " + "method: " + method + "path: " + path + "version: " + version);
 
             String line;
@@ -57,16 +64,20 @@ public class Server {
                 message = "NOT FOUND";
             }
 
-         sendResponse(out,response,message);
+            sendResponse(out, response, message);
             socket.close();
 
         }
     }
-    private void sendResponse(PrintWriter out,HttpResponses response, String message){
-        out.println("HTTP/1.1" + response.getCode() + response.getDescription());
+
+    private void sendResponse(PrintWriter out, HttpResponses response, String message) {
+        out.println("HTTP/1.1 " + response.getCode() + " " + response.getDescription());
         out.println("Content-Type: text/plain");
         out.println("Content-Length: " + message.length());
         out.println();
         out.println(message);
     }
+
+
 }
+
