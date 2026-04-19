@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Handler;
 
 
 public class Server {
@@ -19,6 +18,9 @@ public class Server {
     private ExecutorService pool;
 
     public void start(int port) throws IOException {
+        routes = new HashMap<String,Handler>();
+        routes.put("/", req -> "Home");
+        routes.put("/yee", req -> "YEE");
         pool = Executors.newFixedThreadPool(10);
         serverSocket = new ServerSocket(port);
         while (true) {
@@ -56,19 +58,20 @@ public class Server {
             while ((line = in.readLine()) != null && !line.isEmpty()) {
                 String[] headerParts = line.split(":", 2);
                 headers.put(headerParts[0], headerParts[1]);
+
                 System.out.println(line);
             }
-            if (path.equals("/")) {
-                message = "Home";
-            } else if (path.equals("/yee")) {
-                message = "YEE";
-            } else {
-                response = HttpResponses.NOT_FOUND;
-                message = "NOT FOUND";
+            HttpRequest httpRequest = new HttpRequest(method, path, headers);
+            Handler handler = routes.get(path);
+            if (handler != null) {
+                message = handler.handle(httpRequest);
+                response = HttpResponses.OK;
             }
-
+            else {
+                message = "Not Found";
+                response = HttpResponses.NOT_FOUND;
+            }
             sendResponse(out, response, message);
-            socket.close();
 
         }
     }
