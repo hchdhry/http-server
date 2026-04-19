@@ -8,30 +8,33 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Handler;
 
 
 public class Server {
+    public Map<String, Handler> routes;
     private ServerSocket serverSocket;
-    //private String method;
-   // private String path;
-    //private String version;
-//    private String message;
+    private ExecutorService pool;
 
     public void start(int port) throws IOException {
-
+        pool = Executors.newFixedThreadPool(10);
         serverSocket = new ServerSocket(port);
         while (true) {
             Socket socket = serverSocket.accept();
-            new Thread(() -> {
+            Runnable runnable = () -> {
                 try {
                     handleClient(socket);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
-            }).start();
+            };
+            pool.execute(runnable);
         }
 
     }
+
 
     private void handleClient(final Socket socket) throws IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -42,7 +45,7 @@ public class Server {
             Map<String, String> headers = new HashMap<>();
             HttpResponses response = HttpResponses.OK;
             String[] requestLine = in.readLine().split(" ", 3);
-           String method = requestLine[0];
+            String method = requestLine[0];
             String message = "";
             String path = requestLine[1];
             String version = requestLine[2];
